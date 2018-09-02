@@ -1,13 +1,32 @@
 <template>
   <v-layout row>
-    <v-flex xs12 sm6 offset-sm3>
-      <v-card class="chat-card" dark="">
-        <v-list>
-          <v-subheader
-            >
-              Group Chat
-            </v-subheader>
-            <v-divider></v-divider>
+    <v-flex class="online-users" xs3>
+      <v-list>
+          <v-list-tile
+            :color="(friend.id==activeFriend)?'green':''"
+            v-for="friend in users"
+            v-if="user.id !=friend.id"
+            :key="friend.id"
+            @click="activeFriend=friend.id"
+          >
+            <v-list-tile-action>
+              <v-icon color="green">account_circle</v-icon>
+            </v-list-tile-action>
+
+            <v-list-tile-content>
+              <v-list-tile-title>{{friend.name}}</v-list-tile-title>
+            </v-list-tile-content>
+
+            <!-- <v-list-tile-avatar>
+              <img :src="item.avatar">
+            </v-list-tile-avatar> -->
+          </v-list-tile>
+        </v-list>
+
+    </v-flex>
+    
+    <v-flex id="privateMessageBox" class="messages mb-5" xs9>
+       <v-list>
             <v-list-tile
               class="p-3"
               v-for="(message, index) in allMessages" 
@@ -46,11 +65,10 @@
 
             </v-list-tile>
         </v-list>
-      </v-card>
 
-    </v-flex>
     
       <v-footer
+      
       height="auto"
       fixed
       color="grey"
@@ -75,6 +93,10 @@
       
           
     </v-footer>
+    
+    
+    </v-flex>
+
   </v-layout>
 </template>
 
@@ -85,7 +107,15 @@
     data () {
       return {
         message:null,
-        allMessages:[]
+        activeFriend:null,
+        allMessages:[],
+        users:[],
+      }
+    },
+
+    watch:{
+      activeFriend(val){
+        this.fetchMessages();
       }
     },
 
@@ -96,22 +126,35 @@
         if(!this.message){
           return alert('Please enter message');
         }
+        if(!this.activeFriend){
+          return alert('Please select friend');
+        }
 
-          axios.post('/messages', {message: this.message}).then(response => {
+          axios.post('/private-messages/'+this.activeFriend, {message: this.message}).then(response => {
                     this.message=null;
                     this.allMessages.push(response.data.message)
                     setTimeout(this.scrollToEnd,100);
           });
       },
       fetchMessages() {
-            axios.get('/messages').then(response => {
+         if(!this.activeFriend){
+          return alert('Please select friend');
+        }
+            axios.get('/private-messages/'+this.activeFriend).then(response => {
                 this.allMessages = response.data;
 
             });
         },
+      fetchUsers() {
+            axios.get('/users').then(response => {
+                this.users = response.data;
+
+            });
+        },
+
 
       scrollToEnd(){
-        window.scrollTo(0,99999);
+        document.getElementById('privateMessageBox').scrollTo(0,99999);
       }
 
     
@@ -121,14 +164,15 @@
     },
 
     created(){
-      this.fetchMessages();
+              this.fetchUsers();
 
-      Echo.private('lchat')
-      .listen('MessageSent',(e)=>{
-          this.allMessages.push(e.message)
-          setTimeout(this.scrollToEnd,100);
+              Echo.private('privatechat.'+this.user.id)
+              .listen('PrivateMessageSent',(e)=>{
+                  this.activeFriend=e.message.user_id;
+                  this.allMessages.push(e.message)
+                  setTimeout(this.scrollToEnd,100);
 
-      });
+              });
 
     }
     
@@ -136,7 +180,10 @@
 </script>
 
 <style scoped>
-.chat-card{
-  margin-bottom:140px;
+
+.online-users,.messages{
+  overflow-y:scroll;
+  height:100vh;
 }
+
 </style>

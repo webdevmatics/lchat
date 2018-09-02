@@ -24,7 +24,7 @@
 </head>
 <body>
     <div id="app">
-        <v-toolbar>
+        <v-toolbar fixed color="white">
             <v-toolbar-side-icon></v-toolbar-side-icon>
             <v-toolbar-title> LChat</v-toolbar-title>
             <v-spacer></v-spacer>
@@ -33,6 +33,8 @@
                         <v-btn flat href="{{ route('login') }}">Login</v-btn>
                         <v-btn flat href="{{ route('register') }}">Register</v-btn>
                     @else
+                        <v-btn flat href="{{route('home')}}"> Group</v-btn>
+                        <v-btn flat href="{{route('private')}}"> Private</v-btn>
                         <v-btn flat> {{ Auth::user()->name }}</v-btn>
                         <v-btn flat
                         @click=" $refs.logoutForm.submit(); ">
@@ -42,8 +44,10 @@
             </v-toolbar-items>
         </v-toolbar>
 
-        <main>
-            @yield('content')
+        <main class="mt-5">
+            <v-container fluid>
+                @yield('content')
+            </v-container>
         </main>
     </div>
 </body>

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
 use App\Message;
-use Illuminate\Http\Request;
 use App\Events\MessageSent;
+use Illuminate\Http\Request;
+use App\Events\PrivateMessageSent;
 
 class MessageController extends Controller
 {
@@ -17,6 +19,18 @@ class MessageController extends Controller
     {
         return Message::with('user')->get();
     }
+   
+    public function privateMessages(User $user)
+    {
+        $privateCommunication= Message::with('user')
+        ->where(['user_id'=> auth()->id(), 'receiver_id'=> $user->id])
+        ->orWhere(function($query) use($user){
+            $query->where(['user_id' => $user->id, 'receiver_id' => auth()->id()]);
+        })
+        ->get();
+
+        return $privateCommunication;
+    }
 
     public function sendMessage(Request $request)
     {
@@ -25,6 +39,18 @@ class MessageController extends Controller
         broadcast(new MessageSent(auth()->user(),$message->load('user')))->toOthers();
         
         return response(['status'=>'Message sent successfully','message'=>$message]);
+
+    }
+
+    public function sendPrivateMessage(Request $request,User $user)
+    {
+        $input=$request->all();
+        $input['receiver_id']=$user->id;
+        $message=auth()->user()->messages()->create($input);
+
+        broadcast(new PrivateMessageSent($message->load('user')))->toOthers();
+        
+        return response(['status'=>'Message private sent successfully','message'=>$message]);
 
     }
    

@@ -23,6 +23,7 @@ import 'vuetify/dist/vuetify.min.css'
 
 Vue.component('example-component', require('./components/ExampleComponent.vue'));
 Vue.component('Chat', require('./components/Chat.vue'));
+Vue.component('PrivateChat', require('./components/PrivateChat.vue'));
 
 const app = new Vue({
     el: '#app'
