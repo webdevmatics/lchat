@@ -74138,6 +74138,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       message: null,
       activeFriend: null,
       typingFriend: {},
+      onlineFriends: [],
       allMessages: [],
       typingClock: null,
       users: []
@@ -74214,9 +74215,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
     this.fetchUsers();
 
+    Echo.join('plchat').here(function (users) {
+      console.log('online', users);
+      _this5.onlineFriends = users;
+    }).joining(function (user) {
+      _this5.onlineFriends.push(user);
+      console.log('joining', user.name);
+    }).leaving(function (user) {
+      _this5.onlineFriends.splice(_this5.onlineFriends.indexOf(user), 1);
+      console.log('leaving', user.name);
+    });
+
     Echo.private('privatechat.' + this.user.id).listen('PrivateMessageSent', function (e) {
       console.log('pmessage sent');
-
       _this5.activeFriend = e.message.user_id;
       _this5.allMessages.push(e.message);
       setTimeout(_this5.scrollToEnd, 100);
@@ -74272,9 +74283,19 @@ var render = function() {
                   _c(
                     "v-list-tile-action",
                     [
-                      _c("v-icon", { attrs: { color: "green" } }, [
-                        _vm._v("account_circle")
-                      ])
+                      _c(
+                        "v-icon",
+                        {
+                          attrs: {
+                            color: _vm.onlineFriends.find(function(user) {
+                              return user.id === friend.id
+                            })
+                              ? "green"
+                              : "red"
+                          }
+                        },
+                        [_vm._v("account_circle")]
+                      )
                     ],
                     1
                   ),

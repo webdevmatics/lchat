@@ -9,7 +9,7 @@
             @click="activeFriend=friend.id"
           >
             <v-list-tile-action>
-              <v-icon color="green">account_circle</v-icon>
+              <v-icon :color="(onlineFriends.find(user=>user.id===friend.id))?'green':'red'">account_circle</v-icon>
             </v-list-tile-action>
 
             <v-list-tile-content>
@@ -114,6 +114,7 @@
         message:null,
         activeFriend:null,
         typingFriend:{},
+        onlineFriends:[],
         allMessages:[],
         typingClock:null,
         users:[],
@@ -187,11 +188,23 @@
     created(){
               this.fetchUsers();
 
-              Echo.private('privatechat.'+this.user.id)
+              Echo.join('plchat')
+              .here((users) => {
+                   console.log('online',users);
+                   this.onlineFriends=users;
+              })
+              .joining((user) => {
+                  this.onlineFriends.push(user);
+                  console.log('joining',user.name);
+              })
+              .leaving((user) => {
+                  this.onlineFriends.splice(this.onlineFriends.indexOf(user),1);
+                  console.log('leaving',user.name);
+              });
              
-              .listen('PrivateMessageSent',(e)=>{
+              Echo.private('privatechat.'+this.user.id)
+                .listen('PrivateMessageSent',(e)=>{
                   console.log('pmessage sent')
-
                   this.activeFriend=e.message.user_id;
                   this.allMessages.push(e.message)
                   setTimeout(this.scrollToEnd,100);
