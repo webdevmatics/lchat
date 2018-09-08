@@ -74124,6 +74124,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ['user'],
@@ -74132,11 +74137,23 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
     return {
       message: null,
       activeFriend: null,
+      typingFriend: {},
       allMessages: [],
+      typingClock: null,
       users: []
     };
   },
 
+
+  computed: {
+    friends: function friends() {
+      var _this = this;
+
+      return this.users.filter(function (user) {
+        return user.id !== _this.user.id;
+      });
+    }
+  },
 
   watch: {
     activeFriend: function activeFriend(val) {
@@ -74145,8 +74162,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
   },
 
   methods: {
+    onTyping: function onTyping() {
+      Echo.private('privatechat.' + this.activeFriend).whisper('typing', {
+        user: this.user
+
+      });
+    },
     sendMessage: function sendMessage() {
-      var _this = this;
+      var _this2 = this;
 
       //check if there message
       if (!this.message) {
@@ -74157,26 +74180,27 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
       }
 
       axios.post('/private-messages/' + this.activeFriend, { message: this.message }).then(function (response) {
-        _this.message = null;
-        _this.allMessages.push(response.data.message);
-        setTimeout(_this.scrollToEnd, 100);
+        _this2.message = null;
+        _this2.allMessages.push(response.data.message);
+        setTimeout(_this2.scrollToEnd, 100);
       });
     },
     fetchMessages: function fetchMessages() {
-      var _this2 = this;
+      var _this3 = this;
 
       if (!this.activeFriend) {
         return alert('Please select friend');
       }
       axios.get('/private-messages/' + this.activeFriend).then(function (response) {
-        _this2.allMessages = response.data;
+        _this3.allMessages = response.data;
       });
     },
     fetchUsers: function fetchUsers() {
-      var _this3 = this;
+      var _this4 = this;
 
       axios.get('/users').then(function (response) {
-        _this3.users = response.data;
+        _this4.users = response.data;
+        _this4.activeFriend = _this4.friends[0].id;
       });
     },
     scrollToEnd: function scrollToEnd() {
@@ -74186,14 +74210,28 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
   mounted: function mounted() {},
   created: function created() {
-    var _this4 = this;
+    var _this5 = this;
 
     this.fetchUsers();
 
     Echo.private('privatechat.' + this.user.id).listen('PrivateMessageSent', function (e) {
-      _this4.activeFriend = e.message.user_id;
-      _this4.allMessages.push(e.message);
-      setTimeout(_this4.scrollToEnd, 100);
+      console.log('pmessage sent');
+
+      _this5.activeFriend = e.message.user_id;
+      _this5.allMessages.push(e.message);
+      setTimeout(_this5.scrollToEnd, 100);
+    }).listenForWhisper('typing', function (e) {
+
+      if (e.user.id == _this5.activeFriend) {
+
+        _this5.typingFriend = e.user;
+
+        if (_this5.typingClock) clearTimeout();
+
+        _this5.typingClock = setTimeout(function () {
+          _this5.typingFriend = {};
+        }, 9000);
+      }
     });
   }
 });
@@ -74216,43 +74254,39 @@ var render = function() {
         [
           _c(
             "v-list",
-            _vm._l(_vm.users, function(friend) {
-              return _vm.user.id != friend.id
-                ? _c(
-                    "v-list-tile",
-                    {
-                      key: friend.id,
-                      attrs: {
-                        color: friend.id == _vm.activeFriend ? "green" : ""
-                      },
-                      on: {
-                        click: function($event) {
-                          _vm.activeFriend = friend.id
-                        }
-                      }
-                    },
+            _vm._l(_vm.friends, function(friend) {
+              return _c(
+                "v-list-tile",
+                {
+                  key: friend.id,
+                  attrs: {
+                    color: friend.id == _vm.activeFriend ? "green" : ""
+                  },
+                  on: {
+                    click: function($event) {
+                      _vm.activeFriend = friend.id
+                    }
+                  }
+                },
+                [
+                  _c(
+                    "v-list-tile-action",
                     [
-                      _c(
-                        "v-list-tile-action",
-                        [
-                          _c("v-icon", { attrs: { color: "green" } }, [
-                            _vm._v("account_circle")
-                          ])
-                        ],
-                        1
-                      ),
-                      _vm._v(" "),
-                      _c(
-                        "v-list-tile-content",
-                        [
-                          _c("v-list-tile-title", [_vm._v(_vm._s(friend.name))])
-                        ],
-                        1
-                      )
+                      _c("v-icon", { attrs: { color: "green" } }, [
+                        _vm._v("account_circle")
+                      ])
                     ],
                     1
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "v-list-tile-content",
+                    [_c("v-list-tile-title", [_vm._v(_vm._s(friend.name))])],
+                    1
                   )
-                : _vm._e()
+                ],
+                1
+              )
             })
           )
         ],
@@ -74268,88 +74302,97 @@ var render = function() {
         [
           _c(
             "v-list",
-            _vm._l(_vm.allMessages, function(message, index) {
-              return _c(
-                "v-list-tile",
-                { key: index, staticClass: "p-3" },
-                [
-                  _c(
-                    "v-layout",
-                    {
-                      attrs: {
-                        "align-end": _vm.user.id !== message.user.id,
-                        column: ""
-                      }
-                    },
-                    [
-                      _c(
-                        "v-flex",
-                        [
-                          _c(
-                            "v-layout",
-                            { attrs: { column: "" } },
-                            [
-                              _c("v-flex", [
-                                _c(
-                                  "span",
-                                  { staticClass: "small font-italic" },
-                                  [_vm._v(_vm._s(message.user.name))]
-                                )
-                              ]),
-                              _vm._v(" "),
-                              _c(
-                                "v-flex",
-                                [
+            [
+              _vm._l(_vm.allMessages, function(message, index) {
+                return _c(
+                  "v-list-tile",
+                  { key: index, staticClass: "p-3" },
+                  [
+                    _c(
+                      "v-layout",
+                      {
+                        attrs: {
+                          "align-end": _vm.user.id !== message.user.id,
+                          column: ""
+                        }
+                      },
+                      [
+                        _c(
+                          "v-flex",
+                          [
+                            _c(
+                              "v-layout",
+                              { attrs: { column: "" } },
+                              [
+                                _c("v-flex", [
                                   _c(
-                                    "v-chip",
-                                    {
-                                      attrs: {
-                                        color:
-                                          _vm.user.id !== message.user.id
-                                            ? "red"
-                                            : "green",
-                                        "text-color": "white"
-                                      }
-                                    },
-                                    [
-                                      _c("v-list-tile-content", [
-                                        _vm._v(
-                                          "\n                      " +
-                                            _vm._s(message.message) +
-                                            "\n                    "
-                                        )
-                                      ])
-                                    ],
-                                    1
+                                    "span",
+                                    { staticClass: "small font-italic" },
+                                    [_vm._v(_vm._s(message.user.name))]
                                   )
-                                ],
-                                1
-                              ),
-                              _vm._v(" "),
-                              _c(
-                                "v-flex",
-                                { staticClass: "caption font-italic" },
-                                [
-                                  _vm._v(
-                                    "\n                  " +
-                                      _vm._s(message.created_at) +
-                                      "\n                "
-                                  )
-                                ]
-                              )
-                            ],
-                            1
-                          )
-                        ],
-                        1
-                      )
-                    ],
-                    1
-                  )
-                ],
-                1
-              )
-            })
+                                ]),
+                                _vm._v(" "),
+                                _c(
+                                  "v-flex",
+                                  [
+                                    _c(
+                                      "v-chip",
+                                      {
+                                        attrs: {
+                                          color:
+                                            _vm.user.id !== message.user.id
+                                              ? "red"
+                                              : "green",
+                                          "text-color": "white"
+                                        }
+                                      },
+                                      [
+                                        _c("v-list-tile-content", [
+                                          _vm._v(
+                                            "\n                      " +
+                                              _vm._s(message.message) +
+                                              "\n                    "
+                                          )
+                                        ])
+                                      ],
+                                      1
+                                    )
+                                  ],
+                                  1
+                                ),
+                                _vm._v(" "),
+                                _c(
+                                  "v-flex",
+                                  { staticClass: "caption font-italic" },
+                                  [
+                                    _vm._v(
+                                      "\n                  " +
+                                        _vm._s(message.created_at) +
+                                        "\n                "
+                                    )
+                                  ]
+                                )
+                              ],
+                              1
+                            )
+                          ],
+                          1
+                        )
+                      ],
+                      1
+                    )
+                  ],
+                  1
+                )
+              }),
+              _vm._v(" "),
+              _vm.typingFriend.name
+                ? _c("p", [
+                    _vm._v(_vm._s(_vm.typingFriend.name) + " is typing")
+                  ])
+                : _vm._e()
+            ],
+            2
           ),
           _vm._v(" "),
           _c(
@@ -74378,6 +74421,7 @@ var render = function() {
                           "single-line": ""
                         },
                         on: {
+                          keydown: _vm.onTyping,
                           keyup: function($event) {
                             if (
                               !("button" in $event) &&
