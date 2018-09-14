@@ -170,7 +170,9 @@
       fetchUsers() {
             axios.get('/users').then(response => {
                 this.users = response.data;
-                this.activeFriend=this.friends[0].id;
+                if(this.friends.length>0){
+                  this.activeFriend=this.friends[0].id;
+                }
             });
         },
 
