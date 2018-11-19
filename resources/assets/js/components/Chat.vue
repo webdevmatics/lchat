@@ -1,62 +1,85 @@
 <template>
   <v-layout row>
     <v-flex xs12 sm6 offset-sm3>
-      <v-card class="chat-card" dark="">
+      <v-card class="chat-card" >
+
         <v-list>
           <v-subheader
             >
               Group Chat
             </v-subheader>
             <v-divider></v-divider>
-            <v-list-tile
+            <v-list
               class="p-3"
-              v-for="(message, index) in allMessages" 
+              v-for="(message, index) in allMessages"
               :key="index"
             >
-
-           <v-layout 
-           :align-end="(user.id!==message.user.id)" 
-            column
-           >
-             <v-flex>
-               <v-layout column>
-                  <v-flex>
-                    <span class="small font-italic">{{message.user.name}}</span>
-                  </v-flex>
-
-                  <v-flex>
-                    <v-chip
-                      :color="(user.id!==message.user.id)?'red':'green'"
-                      text-color="white"
-                    >
-
-                      <v-list-tile-content >
-                        {{message.message}}
-                      </v-list-tile-content>
-                    </v-chip>
-                  </v-flex>
-
-                  <v-flex class="caption font-italic">
-                    {{message.created_at}}
-                  </v-flex>
-               </v-layout>
-             </v-flex>
-           </v-layout>
+                <div class="message-wrapper">
+                    <v-flex>
+                        <span class="small font-italic">{{message.user.name}}</span>
+                    </v-flex>
 
 
-            </v-list-tile>
+
+
+
+                    <div v-if="message.message" class="text-message-container">
+                        <v-chip color="green" text-color="white">
+                            {{message.message}}
+
+                        </v-chip>
+
+                    </div>
+
+                    <div class="image-container">
+                        <img v-if="message.image"  :src="'/storage/'+message.image" alt="">
+
+                    </div>
+
+                    <v-flex class="caption font-italic">
+                        {{message.created_at}}
+                    </v-flex>
+                </div>
+
+
+            </v-list>
         </v-list>
       </v-card>
 
     </v-flex>
-    
+
+      <div class="floating-div">
+          <picker v-if="emoStatus" set="emojione" @select="onInput" title="Pick your emoji…" />
+
+      </div>
+
       <v-footer
       height="auto"
       fixed
       color="grey"
       >
       <v-layout row >
-        <v-flex xs6 offset-xs3 justify-center align-center>
+          <v-flex class="ml-2 text-right" xs1>
+              <!--<v-btn-->
+                  <!--dark class="mt-3 white&#45;&#45;text" small flat >-->
+              <!--</v-btn>-->
+              <v-btn @click="toggleEmo" fab dark small color="pink">
+                  <v-icon>insert_emoticon </v-icon>
+              </v-btn>
+          </v-flex>
+
+          <v-flex xs1 class="text-center">
+             <file-upload
+             post-action="/messages"
+             ref='upload'
+             @input-file="$refs.upload.active = true"
+             :headers="{'X-CSRF-TOKEN': token}"
+             >
+                 <v-icon class="mt-3">attach_file</v-icon>
+             </file-upload>
+
+        </v-flex>
+        <v-flex xs6 >
             <v-text-field
               rows=2
               v-model="message"
@@ -66,26 +89,36 @@
             ></v-text-field>
         </v-flex>
 
-        <v-flex xs2> 
-            <v-btn 
+        <v-flex xs4>
+            <v-btn
               @click="sendMessage"
              dark class="mt-3 ml-2 white--text" small color="green">send</v-btn>
+
+
         </v-flex>
+
       </v-layout>
-      
-          
+
+
     </v-footer>
   </v-layout>
 </template>
 
 <script>
+  import { Picker } from 'emoji-mart-vue'
   export default {
     props:['user'],
+    components:{
+      Picker
+    },
     
     data () {
       return {
         message:null,
-        allMessages:[]
+        emoStatus:false,
+        myText:null,
+        allMessages:[],
+        token:document.head.querySelector('meta[name="csrf-token"]').content
       }
     },
 
@@ -99,6 +132,7 @@
 
           axios.post('/messages', {message: this.message}).then(response => {
                     this.message=null;
+                    this.emoStatus=false;
                     this.allMessages.push(response.data.message)
                     setTimeout(this.scrollToEnd,100);
           });
@@ -112,9 +146,21 @@
 
       scrollToEnd(){
         window.scrollTo(0,99999);
+      },
+      onInput(e){
+        if(!e){
+          return false;
+        }
+        if(!this.message){
+          this.message=e.native;
+        }else{
+          this.message=this.message + e.native;
+        }
+      },
+      toggleEmo(){
+            this.emoStatus= !this.emoStatus;
       }
 
-    
     },
 
     mounted(){
@@ -139,4 +185,12 @@
 .chat-card{
   margin-bottom:140px;
 }
+.floating-div{
+    position: fixed;
+}
+.chat-card img {
+    max-width: 300px;
+    max-height: 200px;
+}
+
 </style>

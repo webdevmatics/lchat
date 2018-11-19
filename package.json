@@ -20,8 +20,10 @@
         "vue": "^2.5.7"
     },
     "dependencies": {
+        "emoji-mart-vue": "^2.6.4",
         "laravel-echo": "^1.4.0",
         "pusher-js": "^4.2.2",
+        "vue-upload-component": "^2.8.15",
         "vuetify": "^1.1.9"
     }
 }

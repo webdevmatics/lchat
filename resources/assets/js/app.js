@@ -21,6 +21,9 @@ import 'vuetify/dist/vuetify.min.css'
  * or customize the JavaScript scaffolding to fit your unique needs.
  */
 
+const VueUploadComponent = require('vue-upload-component')
+Vue.component('file-upload', VueUploadComponent)
+
 Vue.component('example-component', require('./components/ExampleComponent.vue'));
 Vue.component('Chat', require('./components/Chat.vue'));
 Vue.component('PrivateChat', require('./components/PrivateChat.vue'));
