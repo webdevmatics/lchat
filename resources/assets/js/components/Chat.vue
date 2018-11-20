@@ -24,10 +24,10 @@
 
 
                     <div v-if="message.message" class="text-message-container">
-                        <v-chip color="green" text-color="white">
-                            {{message.message}}
+                        <v-chip :color="(user.id===message.user_id)?'green':'red'" text-color="white">
+                        {{message.message}}
 
-                        </v-chip>
+                    </v-chip>
 
                     </div>
 
@@ -60,9 +60,6 @@
       >
       <v-layout row >
           <v-flex class="ml-2 text-right" xs1>
-              <!--<v-btn-->
-                  <!--dark class="mt-3 white&#45;&#45;text" small flat >-->
-              <!--</v-btn>-->
               <v-btn @click="toggleEmo" fab dark small color="pink">
                   <v-icon>insert_emoticon </v-icon>
               </v-btn>
