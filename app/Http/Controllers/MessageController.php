@@ -41,7 +41,7 @@ class MessageController extends Controller
             $message=Message::create([
                 'user_id' => request()->user()->id,
                 'image' => $filename,
-                'receiver_id' => request('receiver')
+                'receiver_id' => request('receiver_id')
             ]);
         }else{
             $message = auth()->user()->messages()->create(['message' => $request->message]);
@@ -57,9 +57,18 @@ class MessageController extends Controller
 
     public function sendPrivateMessage(Request $request,User $user)
     {
-        $input=$request->all();
-        $input['receiver_id']=$user->id;
-        $message=auth()->user()->messages()->create($input);
+        if(request()->has('file')){
+            $filename = request('file')->store('chat');
+            $message=Message::create([
+                'user_id' => request()->user()->id,
+                'image' => $filename,
+                'receiver_id' => $user->id
+            ]);
+        }else{
+            $input=$request->all();
+            $input['receiver_id']=$user->id;
+            $message=auth()->user()->messages()->create($input);
+        }
 
         broadcast(new PrivateMessageSent($message->load('user')))->toOthers();
         
